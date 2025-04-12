@@ -25,3 +25,9 @@ This setup enables you to extract **custom metrics** from **HAProxy logs** using
   Define Grok patterns and metrics to suit your needs. You have full control over what gets exposed.
 
 ---
+
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+![alt text](image-2.png)
