@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haproxy-logging
+  namespace: development
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haproxy-logging
+  template:
+    metadata:
+      labels:
+        app: haproxy-logging
+    spec:
+      containers:
+        - name: haproxy
+          image: mesivayenduri/haproxy-loggging:v8
+          imagePullPolicy: Always
+          ports:
+            - name: haproxy
+              containerPort: 80
+            - name: metrics
+              containerPort: 8404
+          volumeMounts:
+            - name: haproxy-logs
+              mountPath: /app/haproxy
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 1
+            limits:
+              memory: 1Gi
+              cpu: 1
+
+        - name: grok-exporter
+          image: mesivayenduri/grok_exporter:v1
+          ports:
+            - containerPort: 9144
+              name: haproxy
+          volumeMounts:
+            - name: haproxy-logs
+              mountPath: /app/haproxy
+            - name: grok-exporter-config
+              mountPath: /grok/config.yml
+              subPath: config.yml
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 1
+            limits:
+              memory: 1Gi
+              cpu: 1
+
+        # - name: log-sidecar
+        #   image: busybox
+        #   args: ["sh", "-c", "tail -F /logs/haproxy.log"]
+        #   volumeMounts:
+        #     - name: haproxy-logs
+        #       mountPath: /logs
+        #   resources:
+        #     requests:
+        #       memory: 512Mi
+        #       cpu: 1
+        #     limits:
+        #       memory: 1Gi
+        #       cpu: 1
+
+      volumes:
+        - name: haproxy-logs
+          emptyDir: {}
+        - name: grok-exporter-config
+          configMap:
+            name: grok-exporter-config

@@ -1,0 +1,18 @@
+apiVersion: "monitoring.coreos.com/v1"
+kind: ServiceMonitor
+metadata:
+  name: haproxy-servicemonitor-dev
+  namespace: development
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - development
+  selector:
+    matchLabels:
+      app: haproxy-service # SHOULD MATCH WITH HAPROXY-SERVICE
+  endpoints:
+  - port: "metrics"
+    path: "/metrics"
+    interval: 15s

@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grok-exporter-config
+  namespace: development
+data:
+  config.yml: |
+    global:
+      config_version: 2
+
+    input:
+      type: file
+      path: /app/haproxy/haproxy.log
+      fail_on_missing_logfile: false
+
+    grok:
+      patterns_dir: /grok/patterns  # Optional if you mount external patterns
+      additional_patterns:
+        - 'HAPROXY_LOG %{SYSLOGTIMESTAMP} %{HOSTNAME} haproxy\[%{NUMBER}\]: %{IP:client_ip}:%{NUMBER:client_port} \[%{HTTPDATE:accept_date}\] %{NOTSPACE} %{NOTSPACE}/%{NOTSPACE} %{NUMBER}/%{NUMBER}/%{NUMBER}/%{NUMBER}/%{NUMBER} %{NUMBER:status_code} %{NUMBER:bytes} %{NOTSPACE} %{NOTSPACE} %{NOTSPACE} %{NUMBER}/%{NUMBER}/%{NUMBER}/%{NUMBER}/%{NUMBER} %{NUMBER}/%{NUMBER} \{%{DATA:user_agent}\} \{%{DATA:referrer}\} \"%{WORD:method} %{URIPATHPARAM:request_path} HTTP/%{NUMBER}\"'
+        # - 'HAPROXY_LOG %{SYSLOGTIMESTAMP:timestamp} %{HOSTNAME:host} haproxy\[%{NUMBER:pid}\]: %{IP:client_ip}:%{NUMBER:client_port} \[%{HTTPDATE:accept_date}\] %{WORD:frontend} %{NOTSPACE:backend} %{NUMBER:Tq}/%{NUMBER:Tw}/%{NUMBER:Tc}/%{NUMBER:Tr}/%{NUMBER:Tt} %{NUMBER:status} %{NUMBER:bytes} - - %{DATA:termination_state} %{DATA:actconn}/%{DATA:feconn}/%{DATA:beconn}/%{DATA:srvconn}/%{DATA:retries} %{DATA:srv_queue}/%{DATA:backend_queue} \{%{DATA:user_agent}\} \{%{DATA:some_field}\} "%{WORD:method} %{URIPATHPARAM:request_path}\?%{DATA:url_params} HTTP/%{NUMBER:http_version}"'
+        - 'HTTPDATE %{MONTHDAY}/%{MONTH}/%{YEAR}:%{TIME}'
+        - 'URIPATHPARAM %{URIPATH}(?:\?%{URIPARAM})?'
+        - 'URIPATH [A-Za-z0-9\-._~!$&''()*+,;=:@/]+'
+        - 'URIPARAM [A-Za-z0-9\-._~!$&''()*+,;=:@/?]+'
+
+    metrics:
+      - type: counter
+        name: haproxy_requests_servlet_total
+        help: "Total requests to /XISOAPAdaptor/Servlet"
+        match: '%{HAPROXY_LOG}'
+        labels:
+          method: '{{.method}}'
+          path: '{{.request_path}}'
+        conditions:
+          - if: '{{.request_path}} == "/XISOAPAdaptor/Servlet"'
+
+      # - type: counter
+      #   name: haproxy_requests_interface_total
+      #   help: "Total number of requests grouped by interface param"
+      #   match: '%{HAPROXY_LOG}'
+      #   labels:
+      #     interface: '{{.url_params}}'
+      #   conditions:
+      #     - if: '{{.request_path}} == "/XISOAPAdaptor/Servlet"'

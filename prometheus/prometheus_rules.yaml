@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: myapp-alerts
+  namespace: development
+  labels:
+    role: alert-rules
+spec:
+  groups:
+    - name: instance.rules
+      rules:
+        - alert: InstanceDown
+          expr: up == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Instance {{ $labels.instance }} is down"
+            description: "No response from {{ $labels.instance }} for 2 minutes"
+    - name: test.rules
+      rules:
+      - alert: HighMemoryUsage
+        expr: vector(1)  # Always true
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "This is a test alert firing always"
+
+

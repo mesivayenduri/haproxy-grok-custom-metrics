@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus-dev
+  namespace: development
+  labels:
+    release: prometheus
+spec:
+  serviceAccountName: dev-sa
+  serviceMonitorSelector:
+    matchLabels:
+      release: prometheus
+  serviceMonitorNamespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: development
+  ruleSelector:
+    matchLabels:
+      role: alert-rules
+  alerting:
+    alertmanagers:
+      - namespace: development
+        name: alertmanager
+        port: 9093
+  resources:
+    requests:
+      memory: 400Mi

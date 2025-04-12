@@ -1,0 +1,18 @@
+apiVersion: "monitoring.coreos.com/v1"
+kind: ServiceMonitor
+metadata:
+  name: grok-servicemonitor-dev
+  namespace: development
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - development
+  selector:
+    matchLabels:
+      app: grok-service #SHOULD MATCH WITH GROK SERVICE
+  endpoints:
+  - port: "metrics"
+    path: "/metrics"
+    interval: 15s
