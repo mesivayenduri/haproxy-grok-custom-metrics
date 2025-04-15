@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grok-exporter-config
+data:
+  config.yml: |
+    global:
+      config_version: 2
+
+    input:
+      type: file
+      path: /app/haproxy/haproxy.log
+      fail_on_missing_logfile: false
+
+    grok:
+      patterns_dir: /grok/patterns  # Optional if you mount external patterns
+      additional_patterns:
+        - 'HAPROXY_LOG %{SYSLOGTIMESTAMP:timestamp} %{HOSTNAME:host} haproxy\[%{NUMBER:pid}\]: %{IP:client_ip}:%{NUMBER:client_port} \[%{MONTHDAY:monthday}/%{MONTH:month}/%{YEAR:year}:%{TIME:time}\.%{INT:millis}\] %{WORD:frontend}~ %{WORD:backend}/(?:<(?<backendhost>NOSRV)>|%{HOSTNAME:backendhost}) %{NUMBER:Tq}/%{NUMBER:Tw}/%{NUMBER:Tc}/%{NUMBER:Tr}/%{NUMBER:Tt} %{NUMBER:status} %{NUMBER:bytes} - - %{DATA:termination_state} %{DATA:actconn}/%{DATA:feconn}/%{DATA:beconn}/%{DATA:srvconn}/%{DATA:retries} %{DATA:srv_queue}/%{DATA:backend_queue} \{%{DATA:user_agent}\} \{%{DATA:some_field}\} "%{WORD:method} %{URIPATHPARAM:request_path}\?%{DATA:url_params}senderService=%{DATA:sender_service}&%{DATA:rest1}interface=%{DATA:interface}&%{DATA:rest2}HTTP/%{NUMBER:http_version}"'
+
+    metrics:
+      - type: counter
+        name: haproxy_requests_servlet_total
+        help: "Total requests to <REQUEST PATH>"
+        match: '%{HAPROXY_LOG}'
+        labels:
+          method: '{{.method}}'
+          path: '{{.request_path}}'
+        conditions:
+          - if: '{{.request_path}} == "<REQUEST PATH>"'
+      - type: counter
+        name: haproxy_senderservice_requests_total
+        help: "Total number of HAProxy requests from senderService"
+        match: '%{HAPROXY_LOG}'
+        labels:
+          frontend: '{{.frontend}}'
+          backend: '{{.backend}}'
+          method: '{{.method}}'
+          status: '{{.status}}'
+          request_path: '{{.request_path}}'
+          sender_service: '{{.sender_service}}'
+        conditions:
+          - if: '{{.request_path}} == "<REQUEST PATH>"'
+      - type: counter
+        name: haproxy_interfaces_requests_total
+        help: "Total number of HAProxy requests to interface"
+        match: '%{HAPROXY_LOG}'
+        labels:
+          frontend: '{{.frontend}}'
+          backend: '{{.backend}}'
+          method: '{{.method}}'
+          status: '{{.status}}'
+          request_path: '{{.request_path}}'
+          interface: '{{.interface}}'
+        conditions:
+          - if: '{{.request_path}} == "<REQUEST PATH>"'
+      - type: counter
+        name: haproxy_requests_failed_total
+        help: "Total number of failed HAProxy requests (NOSRV, 429, 5xx)"
+        match: '%{HAPROXY_LOG}'
+        labels:
+          interface: '{{.interface}}'
+          backendhost: '{{.backendhost}}'
+          status: '{{.status}}'
+      - type: counter
+        name: haproxy_429_requests_total
+        help: "Total number of HAProxy 429 Too Many Requests responses"
+        match: '%{HAPROXY_LOG}'
+        labels:
+          interface: '{{.interface}}'
+          sender_service: '{{.sender_service}}'
+          backendhost: '{{.backendhost}}'
+      - type: gauge
+        name: haproxy_interface_latency_ms
+        help: "HAProxy total response time (Tt) in milliseconds"
+        match: '%{HAPROXY_LOG}'
+        value: "{{.Tt}}"
+        labels:
+          interface: '{{.interface}}'
+          sender_service: '{{.sender_service}}'
+          backendhost: '{{.backendhost}}'
+          method: '{{.method}}'
+          status: '{{.status}}'
