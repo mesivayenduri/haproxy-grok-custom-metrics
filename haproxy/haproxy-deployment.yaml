@@ -52,19 +52,21 @@ spec:
               memory: 1Gi
               cpu: 1
 
-        # - name: log-sidecar
-        #   image: busybox
-        #   args: ["sh", "-c", "tail -F /logs/haproxy.log"]
-        #   volumeMounts:
-        #     - name: haproxy-logs
-        #       mountPath: /logs
-        #   resources:
-        #     requests:
-        #       memory: 512Mi
-        #       cpu: 1
-        #     limits:
-        #       memory: 1Gi
-        #       cpu: 1
+        - name: logrotate
+          image: mesivayenduri/logrotate:v1
+          volumeMounts:
+            - name: haproxy-logs
+              mountPath: /app/haproxy
+            - name: logrotate-config
+              mountPath: /etc/logrotate.conf
+              subPath: logrotate.conf
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: "0.01"
+            limits:
+              memory: 512Mi
+              cpu: "0.03"
 
       volumes:
         - name: haproxy-logs
@@ -72,3 +74,6 @@ spec:
         - name: grok-exporter-config
           configMap:
             name: grok-exporter-config
+        - name: logrotate-config
+          configMap:
+            name: logrotate-config

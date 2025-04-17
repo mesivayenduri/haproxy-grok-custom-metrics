@@ -1,0 +1,16 @@
+/apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logrotate-config
+data:
+  logrotate.conf: |
+    /app/haproxy.log {
+        size 1M # Rotate if the log file is larger than 1MB. You can adjust this size as needed.       
+        daily # Rotate daily. You can also use 'weekly' or 'monthly'.
+        rotate 5 # Keep 5 rotated log files. You can adjust this number as needed.
+        compress # Compress rotated log files. You can use 'delaycompress' to delay compression until the next rotation.
+        missingok # Do not fail if the log file is missing. 
+        notifempty # Do not rotate empty log files. 
+        copytruncate # Copy the log file after rotation. This is useful for applications that do not support log rotation.
+        su root root # Run the logrotate command as root user. Adjust this if your application runs under a different user.
+      }
