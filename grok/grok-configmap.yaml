@@ -26,13 +26,13 @@ data:
     metrics:
       - type: counter
         name: haproxy_requests_servlet_total
-        help: "Total requests to /XISOAPAdaptor/Servlet"
+        help: "Total requests to /ISSoapAdaptor/Servlet"
         match: '%{HAPROXY_LOG}'
         labels:
           method: '{{.method}}'
           path: '{{.request_path}}'
         conditions:
-          - if: '{{.request_path}} == "/XISOAPAdaptor/Servlet"'
+          - if: '{{.request_path}} == "/ISSoapAdaptor/Servlet"'
 
       # - type: counter
       #   name: haproxy_requests_interface_total
@@ -41,4 +41,4 @@ data:
       #   labels:
       #     interface: '{{.url_params}}'
       #   conditions:
-      #     - if: '{{.request_path}} == "/XISOAPAdaptor/Servlet"'
+      #     - if: '{{.request_path}} == "/ISSoapAdaptor/Servlet"'
